@@ -19,6 +19,8 @@ infix 5 ><      -- Outer product
 
 type Scalar = Complex Double
 
+
+
 class QuantumState a where
     add         :: a -> a -> a
     scale       :: Scalar -> a -> a
@@ -40,6 +42,7 @@ class QuantumState a where
             coeffs      = [a/locnorm :+ b/locnorm| a :+ b <- components x]
             locnorm     = norm x
 
+
 data Tuple a b = a :* b
     deriving (Eq, Ord)
 
@@ -60,8 +63,10 @@ instance Ord a => QuantumState (Bra a) where
     norm x          = sqrt $ realPart (x |.| toKet x) 
     bracket         = bracketBra
 
+-- Define Kets as linear operators from Bra vectors into Scalars
+type Ket a = Bra a -> Scalar
 
-ket :: Ord a => Bra a -> (Bra a -> Scalar)
+ket :: Ord a => Bra a -> Ket a
 ket b = bracket b
 
 -- Ket tensor product
@@ -80,8 +85,8 @@ x |< y              = foldl1 (:+<) [(((x |.| (ket (Bra a))) * (y |.| (ket (Bra b
 
 
 -- Addition of Ket vectors
-(+|) :: Ord a => (Bra a -> Scalar) -> (Bra a -> Scalar) -> (Bra a -> Scalar)
-x +| y		= sum . (`map` [x,y]) . flip ($)
+(+|) :: Ord a => Ket a -> Ket a -> Ket a
+x +| y          = foldl1 (+) . (`map` [x,y]) . flip ($)
 
 -- Addition of Bra vectors
 (+<) :: Ord a => Bra a -> Bra a -> Bra a
@@ -90,12 +95,12 @@ BraZero +< x    = x
 x +< y          = reduce (x :+< y)
 
 -- Scalar multiplication of Kets
-(*|) :: Ord a => Scalar -> (Bra a -> Scalar) -> (Bra a -> Scalar)
+(*|) :: Ord a => Scalar -> Ket a -> Ket a
 s *| x                   = (s*) . x
 
 -- Scalar multiplication of Bras
 (*<) :: Ord a => Scalar -> Bra a -> Bra a
-s *< (x :+< y)      = (s :*< x) +< (s :*< y)
+s *< (x :+< y)      = (s *< x) +< (s *< y)
 _ *< BraZero        = BraZero
 0 *< _              = BraZero
 s *< (t :*< x)      = (s*t) *< x
@@ -160,18 +165,18 @@ braBasis (b1 :+< b2)  = nub (braBasis b1 ++ braBasis b2)
 -- toBra (s :*| x)      = (conjugate s) :*< toBra x
 
 -- Convert from Bra to Ket
-toKet :: Ord a => Bra a -> (Bra a -> Scalar)
+toKet :: Ord a => Bra a -> Ket a
 toKet  b   = ket b
 
 -- Inner product
-(|.|) :: (Ord a) => Bra a -> (Bra a -> Scalar) -> Scalar
+(|.|) :: (Ord a) => Bra a -> Ket a -> Scalar
 x |.| y = y x
 
 bracketBra :: (Ord a) => Bra a -> Bra a -> Scalar
 bracketBra BraZero _        = 0
 bracketBra _ BraZero        = 0
 bracketBra (Bra i) (Bra j)  = d i j 
-bracketBra (p :*< x) y      = p*(bracketBra x y)
+bracketBra (p :*< x) y      = (conjugate p) * (bracketBra x y)
 bracketBra x (p :*< y)      = p*(bracketBra x y)
 bracketBra (x1 :+< x2) y    = (bracketBra x1 y) + (bracketBra x2 y)
 bracketBra x (y1 :+< y2)    = (bracketBra x y1) + (bracketBra x y2)
@@ -183,7 +188,11 @@ d i j
     | i == j    = 1
     | otherwise = 0 
 
--- Outer product
+-- Outer product.
+-- Used to apply an operator to a Bra vector 
+-- by first expanding the Bra into an eigenbasis of the operator
+-- and then applying the operator to each of the eigenvectors
+-- and finally recombining into a new Bra vector
 closure :: (QuantumState a, QuantumState b) => (a -> b) -> a -> b
 closure operator x =
     compose' (components x) (map operator (basis x))
@@ -192,6 +201,9 @@ closure operator x =
 
 (><) :: (QuantumState b, QuantumState a) => (a -> b) -> a -> b
 operator >< x   = closure operator x
+
+apply_op :: (QuantumState a, QuantumState b) => (a -> b) -> a -> b
+apply_op f x = f >< x
 
 -- Pretty printing stuff
 -- instance (Show a, Eq a, Ord a) => Show (Ket a) where
