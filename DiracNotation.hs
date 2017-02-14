@@ -1,6 +1,6 @@
 module DiracNotation where
-import Data.Complex
-import Data.List (nub)
+import           Data.Complex
+import           Data.List    (nub)
 
 --------------------------------------------------------------------------------
 -- Infix operators for nice and simple notation                               --
@@ -32,7 +32,7 @@ class QuantumState a where
     reduce      :: a -> a
     basis       :: a -> [a]
     components  :: a -> [Scalar]
-    compose     :: [Scalar] -> [a] -> a 
+    compose     :: [Scalar] -> [a] -> a
     dim         :: a -> Int
     norm        :: a -> Double
     normalize   :: a -> a
@@ -71,9 +71,9 @@ instance Ord a => QuantumState (Ket a) where
     reduce          = reduceKet
     basis           = ketBasis
     components x    = [toBra e |.| x | e <- basis x]
-    compose coeffs v= foldl1 (:+|) [fst z :*| snd z | z <- zip coeffs v]
-    norm KetZero    = 0
-    norm x          = sqrt $ realPart (toBra x |.| x) 
+    compose coeffs v= foldl1 (:+|) [uncurry (:*|) z | z <- zip coeffs v]
+    norm KetZero = 0
+    norm x       = sqrt $ realPart (toBra x |.| x)
     bracket         = bracketKet
 
 --------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ type Bra a = Ket a -> Scalar
 -- which we use as our representation of the Bra vector                       --
 --------------------------------------------------------------------------------
 bra :: Ord a => Ket a -> Bra a
-bra b = bracket b
+bra = bracket
 
 --------------------------------------------------------------------------------
 -- Ket tensor product                                                         --
@@ -95,7 +95,7 @@ bra b = bracket b
 Ket a >| Ket b  = Ket (a :* b)
 _ >| KetZero    = KetZero
 KetZero >| _    = KetZero
-x >| y          = foldl1 (:+|) [((bra (Ket a) |.| x) * (bra (Ket b) |.| y)) 
+x >| y          = foldl1 (:+|) [((bra (Ket a) |.| x) * (bra (Ket b) |.| y))
                   :*| Ket (a :* b) | Ket a <- basis x, Ket b <- basis y]
 
 --------------------------------------------------------------------------------
@@ -108,10 +108,10 @@ x +| y          = reduce (x :+| y)
 
 --------------------------------------------------------------------------------
 -- Adding two Bra vectors results in a new linear operator Ket -> Scalar      --
--- (<a| + <b|)|c> = <a|c> + <b|c>                                             --   
+-- (<a| + <b|)|c> = <a|c> + <b|c>                                             --
 --------------------------------------------------------------------------------
 (+<) :: Ord a => Bra a -> Bra a -> Bra a
-x +< y          = foldl1 (+) . (`map` [x,y]) . flip ($)
+x +< y          = sum . (`map` [x,y]) . flip ($)
 
 --------------------------------------------------------------------------------
 -- Multiplication of a Ket by a scalar results in a Ket vector                --
@@ -141,14 +141,13 @@ s *< x                   = (s*) . x
 instance Ord a => Num (Ket a) where
     x + y   = x +| y
     x - y   = x +| ((-1) *| y)
-
 --------------------------------------------------------------------------------
 -- Two Kets are equal iff all their components are equal                      --
 --------------------------------------------------------------------------------
 instance (Eq a, Ord a) => Eq (Ket a) where
     x == y   = and [coeff v x == coeff v y | v <- basis x]
       where
-         coeff v z = (toBra v) |.| z
+         coeff v z = toBra v |.| z
 
 --------------------------------------------------------------------------------
 -- Reduce a Ket to a sum of orthogonal basis Kets                             --
@@ -164,16 +163,16 @@ reduceKet x
 -- Extract the basis vectors from a Ket                                       --
 --------------------------------------------------------------------------------
 ketBasis :: Ord a => Ket a -> [Ket a]
-ketBasis KetZero    = [KetZero]
-ketBasis (Ket k)    = [Ket k]
-ketBasis (_ :*| x)    = [x]
-ketBasis (k1 :+| k2)  = nub (ketBasis k1 ++ ketBasis k2)
+ketBasis KetZero     = [KetZero]
+ketBasis (Ket k)     = [Ket k]
+ketBasis (_ :*| x)   = [x]
+ketBasis (k1 :+| k2) = nub (ketBasis k1 ++ ketBasis k2)
 
 --------------------------------------------------------------------------------
 -- Converting a Ket into a Bra is simply applying bracket to the Ket          --
 -- bracket a = <a| = (Ket -> Scalar)
 toBra :: Ord a => Ket a -> Bra a
-toBra k = bra k
+toBra   = bra
 
 --------------------------------------------------------------------------------
 -- The inner product between two QuantumStates, a and b, is defined as        --
@@ -187,13 +186,13 @@ b |.| k = b k
 -- bracket |a> |b> = <a|b>, thus defining the dual Bra vectors as well        --
 --------------------------------------------------------------------------------
 bracketKet :: (Ord a) => Ket a -> Ket a -> Scalar
-bracketKet KetZero _        = 0
-bracketKet _ KetZero        = 0
-bracketKet (Ket i) (Ket j)  = d i j -- Assuming the basis Kets are orthonormal
-bracketKet (p :*| x) y      = (conjugate p) * (bracketKet x y)
-bracketKet x (p :*| y)      = p*(bracketKet x y)
-bracketKet (x1 :+| x2) y    = (bracketKet x1 y) + (bracketKet x2 y)
-bracketKet x (y1 :+| y2)    = (bracketKet x y1) + (bracketKet x y2)
+bracketKet KetZero _       = 0
+bracketKet _ KetZero       = 0
+bracketKet (Ket i) (Ket j) = d i j -- Assuming the basis Kets are orthonormal
+bracketKet (p :*| x) y     = conjugate p * bracketKet x y
+bracketKet x (p :*| y)     = p * bracketKet x y
+bracketKet (x1 :+| x2) y   = bracketKet x1 y + bracketKet x2 y
+bracketKet x (y1 :+| y2)   = bracketKet x y1 + bracketKet x y2
 
 --------------------------------------------------------------------------------
 -- Kroenecker dela function, used as the inner product of two basis Kets      --
@@ -201,13 +200,13 @@ bracketKet x (y1 :+| y2)    = (bracketKet x y1) + (bracketKet x y2)
 d :: Eq a => a -> a -> Scalar
 d i j
     | i == j    = 1
-    | otherwise = 0 
+    | otherwise = 0
 
 --------------------------------------------------------------------------------
--- Outer product or closure relation                                          --                                   
--- Used to apply an operator to a Ket vector by first expanding the Bra into  --
+-- Outer product or closure relation                                          --
+-- Used to apply an operator to a Ket vector by first expanding the Ket into  --
 -- an eigenbasis of the operator and then applying the operator to each of    --
--- the eigenvectors and finally recombining into a new Bra vector             --
+-- the eigenketss and finally recombining into a new Ket vector             --
 -- |y> = A |x> = Sum k (A |k><k|x>) = Sum k,l (<k| cl*|l> A|k>) =             --
 -- = Sum k,l (Ak * cl * d(k,l) * |k>) = Sum k (Ak * ck * |k>)                 --
 --------------------------------------------------------------------------------
@@ -227,8 +226,8 @@ operator >< x   = closure operator x
 -- Helper function to avoid having to use the closure relation                --
 -- when applying operators to Ket vectors                                     --
 --------------------------------------------------------------------------------
-apply_op :: (QuantumState a, QuantumState b) => (a -> b) -> a -> b
-apply_op f x = f >< x
+applyOp :: (QuantumState a, QuantumState b) => (a -> b) -> a -> b
+applyOp f x = f >< x
 
 --------------------------------------------------------------------------------
 -- Make Ket a an instance of Show, in order to print Ket vectors in a pretty  --
@@ -236,10 +235,10 @@ apply_op f x = f >< x
 -- instance of Show and thus cannot be printed                                --
 --------------------------------------------------------------------------------
 instance (Show a, Eq a, Ord a) => Show (Ket a) where
-    showsPrec _ KetZero          = showString "Zero-Ket"
-    showsPrec n (Ket j)          = showString "|" . showsPrec n j . showString ">"
-    showsPrec n (x :*| k)   = showsScalar n x . showsPrec n k
-    showsPrec n (j :+| k)   = showsPrec n j . showString " + " . showsPrec n k
+    showsPrec _ KetZero   = showString "Zero-Ket"
+    showsPrec n (Ket j)   = showString "|" . showsPrec n j . showString ">"
+    showsPrec n (x :*| k) = showsScalar n x . showsPrec n k
+    showsPrec n (j :+| k) = showsPrec n j . showString " + " . showsPrec n k
 
 --------------------------------------------------------------------------------
 -- Make Scalar an instance of Show in order to properly print scalar values   --
