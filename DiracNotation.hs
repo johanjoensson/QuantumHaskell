@@ -50,7 +50,7 @@ class QuantumState a where
 -- Data type for multidimensional Ket spaces                                  --
 --------------------------------------------------------------------------------
 data Tuple a b = a :* b
-    deriving (Eq, Ord)
+    deriving (Eq)
 
 --------------------------------------------------------------------------------
 -- Ket constructors                                                           --
@@ -65,7 +65,7 @@ data Ket a=
 -- Make our Ket vectors instances of the QuantumState type class              --
 -- and define appropriate functions on Kets                                   --
 --------------------------------------------------------------------------------
-instance Ord a => QuantumState (Ket a) where
+instance Eq a => QuantumState (Ket a) where
     add             = (+|)
     scale           = (*|)
     reduce          = reduceKet
@@ -85,13 +85,13 @@ type Bra a = Ket a -> Scalar
 -- partial application gives bracket b = <b| = Ket a -> Scalar                --
 -- which we use as our representation of the Bra vector                       --
 --------------------------------------------------------------------------------
-bra :: Ord a => Ket a -> Bra a
+bra :: Eq a => Ket a -> Bra a
 bra = bracket
 
 --------------------------------------------------------------------------------
 -- Ket tensor product                                                         --
 --------------------------------------------------------------------------------
-(>|) :: (Ord a, Ord b) => Ket a -> Ket b -> Ket (Tuple a b)
+(>|) :: (Eq a, Eq b) => Ket a -> Ket b -> Ket (Tuple a b)
 Ket a >| Ket b  = Ket (a :* b)
 _ >| KetZero    = KetZero
 KetZero >| _    = KetZero
@@ -101,7 +101,7 @@ x >| y          = foldl1 (:+|) [((bra (Ket a) |.| x) * (bra (Ket b) |.| y))
 --------------------------------------------------------------------------------
 -- Addition of two Ket vectors results in a Ket vector                        --
 --------------------------------------------------------------------------------
-(+|) :: Ord a => Ket a -> Ket a -> Ket a
+(+|) :: Eq a => Ket a -> Ket a -> Ket a
 x +| KetZero    = x
 KetZero +| x    = x
 x +| y          = reduce (x :+| y)
@@ -110,13 +110,13 @@ x +| y          = reduce (x :+| y)
 -- Adding two Bra vectors results in a new linear operator Ket -> Scalar      --
 -- (<a| + <b|)|c> = <a|c> + <b|c>                                             --
 --------------------------------------------------------------------------------
-(+<) :: Ord a => Bra a -> Bra a -> Bra a
+(+<) :: Eq a => Bra a -> Bra a -> Bra a
 x +< y          = sum . (`map` [x,y]) . flip ($)
 
 --------------------------------------------------------------------------------
 -- Multiplication of a Ket by a scalar results in a Ket vector                --
 --------------------------------------------------------------------------------
-(*|) :: Ord a => Scalar -> Ket a -> Ket a
+(*|) :: Eq a => Scalar -> Ket a -> Ket a
 s *| (x :+| y)      = (s *| x) +| (s *| y)
 _ *| KetZero        = KetZero
 0 *| _              = KetZero
@@ -127,7 +127,7 @@ s *| x              = s :*| x
 -- Bra myltiplied by a scalar results in a linear operator Ket -> Scalar      --
 -- (a * <b|)|c> = a * <b|c>                                                   --
 --------------------------------------------------------------------------------
-(*<) :: Ord a => Scalar -> Bra a -> Bra a
+(*<) :: Eq a => Scalar -> Bra a -> Bra a
 s *< x                   = (s*) . x
 
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -138,13 +138,13 @@ s *< x                   = (s*) . x
 -- at least (+) and (-) are trivial to implement                              --
 -- the other functions are less obvious, e.g. fromInteger seems impossible    --
 --------------------------------------------------------------------------------
-instance Ord a => Num (Ket a) where
+instance Eq a => Num (Ket a) where
     x + y   = x +| y
     x - y   = x +| ((-1) *| y)
 --------------------------------------------------------------------------------
 -- Two Kets are equal iff all their components are equal                      --
 --------------------------------------------------------------------------------
-instance (Eq a, Ord a) => Eq (Ket a) where
+instance Eq a => Eq (Ket a) where
     x == y   = and [coeff v x == coeff v y | v <- basis x]
       where
          coeff v z = toBra v |.| z
@@ -152,7 +152,7 @@ instance (Eq a, Ord a) => Eq (Ket a) where
 --------------------------------------------------------------------------------
 -- Reduce a Ket to a sum of orthogonal basis Kets                             --
 --------------------------------------------------------------------------------
-reduceKet :: Ord a => Ket a -> Ket a
+reduceKet :: Eq a => Ket a -> Ket a
 reduceKet x
          = compose coeffs v
           where
@@ -162,7 +162,7 @@ reduceKet x
 --------------------------------------------------------------------------------
 -- Extract the basis vectors from a Ket                                       --
 --------------------------------------------------------------------------------
-ketBasis :: Ord a => Ket a -> [Ket a]
+ketBasis :: Eq a => Ket a -> [Ket a]
 ketBasis KetZero     = [KetZero]
 ketBasis (Ket k)     = [Ket k]
 ketBasis (_ :*| x)   = [x]
@@ -171,21 +171,21 @@ ketBasis (k1 :+| k2) = nub (ketBasis k1 ++ ketBasis k2)
 --------------------------------------------------------------------------------
 -- Converting a Ket into a Bra is simply applying bracket to the Ket          --
 -- bracket a = <a| = (Ket -> Scalar)
-toBra :: Ord a => Ket a -> Bra a
+toBra :: Eq a => Ket a -> Bra a
 toBra   = bra
 
 --------------------------------------------------------------------------------
 -- The inner product between two QuantumStates, a and b, is defined as        --
 -- <a|b> = (<a|)|b>, i.e. bracket a b = (bracket a) b                         --
 --------------------------------------------------------------------------------
-(|.|) :: (Ord a) => Bra a -> Ket a -> Scalar
+(|.|) :: (Eq a) => Bra a -> Ket a -> Scalar
 b |.| k = b k
 
 --------------------------------------------------------------------------------
 -- In a Bra - Ket representation define the bracket in terms of Ket vectors   --
 -- bracket |a> |b> = <a|b>, thus defining the dual Bra vectors as well        --
 --------------------------------------------------------------------------------
-bracketKet :: (Ord a) => Ket a -> Ket a -> Scalar
+bracketKet :: (Eq a) => Ket a -> Ket a -> Scalar
 bracketKet KetZero _       = 0
 bracketKet _ KetZero       = 0
 bracketKet (Ket i) (Ket j) = d i j -- Assuming the basis Kets are orthonormal
@@ -229,12 +229,32 @@ operator >< x   = closure operator x
 applyOp :: (QuantumState a, QuantumState b) => (a -> b) -> a -> b
 applyOp f x = f >< x
 
+-------------------------------------------------------------------------------
+-- Make Ket an instance of Functor. This might be useful for changing basis. --
+-- With emphasis on the might part.                                          --
+-------------------------------------------------------------------------------
+instance Functor Ket where
+    fmap f KetZero   = KetZero
+    fmap f (Ket i)   = Ket (f i)
+    fmap f (k :+| l) = fmap f k :+| fmap f l
+    fmap f (s :*| k) = s :*| fmap f k
+
+--------------------------------------------------------------------------------
+-- Make Ket an instance of Applicative. Again this might be useful for        --
+-- changing basis, but with an heavier emphasis on the might part than for    --
+-- Functor.                                                                   --
+--------------------------------------------------------------------------------
+instance Applicative Ket where
+    pure = Ket
+    KetZero <*> _ = KetZero
+    Ket f <*> k = fmap f k
+
 --------------------------------------------------------------------------------
 -- Make Ket a an instance of Show, in order to print Ket vectors in a pretty  --
 -- way. Since Bra vectors are functions in Haskell they cannot be made an     --
 -- instance of Show and thus cannot be printed                                --
 --------------------------------------------------------------------------------
-instance (Show a, Eq a, Ord a) => Show (Ket a) where
+instance (Show a, Eq a) => Show (Ket a) where
     showsPrec _ KetZero   = showString "Zero-Ket"
     showsPrec n (Ket j)   = showString "|" . showsPrec n j . showString ">"
     showsPrec n (x :*| k) = showsScalar n x . showsPrec n k
@@ -254,3 +274,19 @@ showsScalar n x@(a :+ b)
 --------------------------------------------------------------------------------
 instance (Show a, Show b) => Show (Tuple a b) where
     showsPrec n (a :* b) = showsPrec n a . showString "; " . showsPrec n b
+
+data BraTest a = BraTest { bracketTest :: Ket a -> Scalar, toKet :: Ket a }
+
+toBraTest :: (Eq a) => Ket a -> BraTest a
+toBraTest k = BraTest (bracket k) k
+
+instance (Eq a) => Monoid (BraTest a) where
+    mempty = BraTest (bracket KetZero) KetZero
+    (BraTest k a) `mappend` (BraTest l b) = BraTest (\x -> (k x) + (l x)) (a + b)
+
+instance (Show a, Eq a) => Show (BraTest a) where
+    showsPrec _ (BraTest _ KetZero)   = showString "Zero-Bra"
+    showsPrec n (BraTest _ (Ket j))   = showString "<" . showsPrec n j . showString "|"
+    showsPrec n (BraTest f (x :*| k)) = showsScalar n x' . showsPrec n (BraTest f k)
+        where x' = conjugate x
+    showsPrec n (BraTest f (j :+| k)) = showsPrec n (BraTest f j) . showString " + " . showsPrec n (BraTest f k)
