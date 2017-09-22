@@ -1,7 +1,7 @@
-import           AutomaticDifferentiation
+import           MathLib.AutomaticDifferentiation
 import           Data.Complex
 import qualified Data.List                as Dat
-import           DiracNotation
+import           Notation.DiracNotation
 
 a :: Ket Int -> Ket Int
 a = applyOp a_eig
@@ -41,8 +41,9 @@ hermite x k = val where
     herm y (Ket 1)   = 2*y * herm y (Ket 0)
     herm y (k :+| l) = herm y k + herm y l
     herm y (s :*| k) = C s * herm y k
-    herm y k@(Ket n) = 2.0/sqrt (fromIntegral n) *( y * herm y (a k)
-                       - fromIntegral n *herm y (a $ a k)/sqrt (fromIntegral (n - 1)))
+    herm y k@(Ket n) = 2.0 / sqrt (fromIntegral n) *
+        ( y * herm y (a k) - fromIntegral n * herm y (a $ a k) /
+        sqrt (fromIntegral (n - 1)))
 
 
 main = do
