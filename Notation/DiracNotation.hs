@@ -4,6 +4,7 @@ module Notation.DiracNotation
 , (|.|)
 , (><)
 , Scalar
+, Tuple(..)
 , Ket(..)
 , Bra(toKet)
 , toBra
@@ -252,7 +253,7 @@ instance (Show a, Eq a) => Show (Ket a) where
 showSign :: (Show a, Eq a) => Int -> Ket a -> String -> String
 showSign n (Ket j) = showString " + "
 showSign n (s@(a :+ b) :*| k)
-    | b == 0, a < 0 = showString ""
+    | b == 0, a < 0 = showString " "
     | otherwise = showString " + "
 
 --------------------------------------------------------------------------------

@@ -35,3 +35,6 @@ Publishers. This package is used in order to calculate the wave-functions for
 the energy eigenstates for the harmonic oscillator, using Hermite polynomials.
 As suggested by Jerzy Karczmarczuk, in Scientific Computation and Functional
 Programming.
+
+[![Build Status](https://travis-ci.org/johanjoensson/QuantumHaskell.svg?branch=master)](https://travis-ci.org/johanjoensson/QuantumHaskell)
+[![Coverage Status](https://coveralls.io/repos/github/johanjoensson/QuantumHaskell/badge.svg?branch=master)](https://coveralls.io/github/johanjoensson/QuantumHaskell?branch=master)
