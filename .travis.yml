@@ -1,0 +1,16 @@
+sudo: false
+
+language: haskell
+ghc:
+  - "8.0"
+
+install:
+  - cabal install --dry-run --only-dependencies --enable-tests QuantumHaskell-notation/
+  - cabal install --dry-run --only-dependencies --enable-tests QuantumHaskell-mathlib/
+
+script:
+  - cabal configure --enable-tests QuantumHaskell-notation/ && cabal build QuantumHaskell-notation/ && cabal test QuantumHaskell-notation/
+  - cabal configure --enable-tests QuantumHaskell-mathlib/ && cabal build QuantumHaskell-mathlib/ && cabal test QuantumHaskell-mathlib/
+
+notifications:
+  email: false
