@@ -13,8 +13,7 @@ script:
   - cd QuantumHaskell-mathlib/ && cabal configure --enable-coverage --enable-tests && cabal build && cabal test
 
 after_script:
-  - cd QuantumHaskell-notation/ && cabal sandbox init && cabal install hpc-coveralls
-  - .cabal-sandbox/bin/hpc-coveralls QuantumHaskell-notation-test
+  - cd QuantumHaskell-notation/ && cabal sandbox init && cabal install hpc-coveralls && .cabal-sandbox/bin/hpc-coveralls QuantumHaskell-notation-test && cd ..
 
 notifications:
   email: false
