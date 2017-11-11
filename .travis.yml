@@ -5,12 +5,12 @@ ghc:
   - "8.0"
 
 install:
-  - cd QuantumHaskell-notation && cabal install --dry-run --only-dependencies --enable-tests
-  - cd QuantumHaskell-mathlib && cabal install --dry-run --only-dependencies --enable-tests QuantumHaskell-mathlib/
+  - cd QuantumHaskell-notation && cabal install --dry-run --only-dependencies --enable-tests && cd ..
+  - cd QuantumHaskell-mathlib && cabal install --dry-run --only-dependencies --enable-tests QuantumHaskell-mathlib/ && cd ..
 
 script:
-  - cd QuantumHaskell-notation && cabal configure --enable-tests && cabal build && cabal test 
-  - cd QuantumHaskell-mathlib && cabal configure --enable-tests && cabal build && cabal test 
+  - cd QuantumHaskell-notation && cabal configure --enable-tests && cabal build && cabal test && cd ..
+  - cd QuantumHaskell-mathlib && cabal configure --enable-tests && cabal build && cabal test && cd ..
 
 notifications:
   email: false
