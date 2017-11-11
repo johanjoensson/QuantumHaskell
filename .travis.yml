@@ -6,7 +6,7 @@ ghc:
 
 install:
   - cd QuantumHaskell-notation && cabal install --dry-run --only-dependencies --enable-tests && cd ..
-  - cd QuantumHaskell-mathlib && cabal install --dry-run --only-dependencies --enable-tests QuantumHaskell-mathlib/ && cd ..
+  - cd QuantumHaskell-mathlib && cabal install --dry-run --only-dependencies --enable-tests && cd ..
 
 script:
   - cd QuantumHaskell-notation && cabal configure --enable-tests && cabal build && cabal test && cd ..
