@@ -4,9 +4,6 @@ language: haskell
 ghc:
   - "8.0"
 
-before_install:
-  - cabal install hpc-coveralls
-
 install:
   - cd QuantumHaskell-notation/ && cabal install --only-dependencies --enable-tests && cd ..
   - cd QuantumHaskell-mathlib/ && cabal install --only-dependencies --enable-tests && cd ..
@@ -16,8 +13,8 @@ script:
   - cd QuantumHaskell-mathlib/ && cabal configure --enable-coverage --enable-tests && cabal build && cabal test
 
 after_script:
-  - cabal sandbox init && cabal install hpc-coveralls
-  - .cabal-sandbox/bin/hpc-coveralls QuantumHaskell-notation/test/notation-test.hs
+  - cd QuantumHaskell-notation/ && cabal sandbox init && cabal install hpc-coveralls
+  - .cabal-sandbox/bin/hpc-coveralls QuantumHaskell-notation-test
 
 notifications:
   email: false
