@@ -10,7 +10,7 @@ install:
 
 script:
   - cd QuantumHaskell-notation/ && cabal configure --enable-coverage --enable-tests && cabal build && cabal test && cd ..
-  - cd QuantumHaskell-mathlib/ && cabal configure --enable-coverage --enable-tests && cabal build && cabal test
+  - cd QuantumHaskell-mathlib/ && cabal configure --enable-coverage --enable-tests && cabal build && cabal test && cd ..
 
 after_script:
   - cd QuantumHaskell-notation/ && cabal sandbox init && cabal install hpc-coveralls && .cabal-sandbox/bin/hpc-coveralls QuantumHaskell-notation-test && cd ..
