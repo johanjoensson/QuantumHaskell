@@ -12,5 +12,8 @@ script:
   - cd QuantumHaskell-notation/ && cabal configure --enable-tests && cabal build && cabal test && cd ..
   - cd QuantumHaskell-mathlib/ && cabal configure --enable-tests && cabal build && cabal test && cd ..
 
+after_success:
+  - coveralls
+
 notifications:
   email: false
