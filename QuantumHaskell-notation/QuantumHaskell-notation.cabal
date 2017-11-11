@@ -17,8 +17,6 @@ library
   hs-source-dirs:      src
   exposed-modules:     Notation.DiracNotation, Notation.QuantumState
   build-depends:       base >= 4.7 && < 5
-                     , QuickCheck >= 2.9
-                     , hspec >= 2.0
   default-language:    Haskell2010
 
 test-suite QuantumHaskell-notation-test

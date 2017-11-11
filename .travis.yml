@@ -9,11 +9,12 @@ install:
   - cd QuantumHaskell-mathlib/ && cabal install --only-dependencies --enable-tests && cd ..
 
 script:
-  - cd QuantumHaskell-notation/ && cabal configure --enable-tests && cabal build && cabal test && cd ..
-  - cd QuantumHaskell-mathlib/ && cabal configure --enable-tests && cabal build && cabal test && cd ..
+  - cd QuantumHaskell-notation/ && cabal configure --enable-coverage --enable-tests && cabal build && cabal test && cd ..
+  - cd QuantumHaskell-mathlib/ && cabal configure --enable-coverage --enable-tests && cabal build && cabal test
 
-after_success:
-  - coveralls
+after_script:
+  - cabal install hpc-coveralls
+  - hpc-coveralls QuantumHaskell-notation/test/notation-test.hs
 
 notifications:
   email: false
